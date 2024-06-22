@@ -32,17 +32,21 @@ class User(UserMixin, db.Model):
 
 class Data(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, nullable=False)
     question = db.Column(db.Text, nullable=False)
     ai_answer = db.Column(db.Boolean, nullable=False)
-    real_answer = db.Column(db.String(10), nullable=False)
+    ask_id = db.Column(db.Integer, nullable=False)
 
 class Score(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, nullable=False)
+    ask_id = db.Column(db.Integer, nullable=False)
     start_date = db.Column(db.Numeric(18, 9), nullable=False)
     difficulty_level = db.Column(db.String(100), nullable=False)
     time = db.Column(db.Numeric(18, 9), nullable=False)
+
+class Ask(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=False)
+    real_answer = db.Column(db.String(100), nullable=False)
 
 with app.app_context():
     db.create_all()
@@ -100,6 +104,16 @@ def infer_character(answers):
         return possible_characters[0]['name']
     else:
         return "特定のキャラクターを見つけることができませんでした。"
+
+def save_ask(user_id, real_answer):
+    try:
+        with app.app_context():
+            db.session.add(Ask(user_id=user_id, real_answer=real_answer))
+            db.session.commit()
+            print("Ask saved successfully")
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error saving data: {e}")
 
 def save_data(user_id, question, answer, real_answer):
     boolean_answer = True if answer.lower() == 'yes' else False
