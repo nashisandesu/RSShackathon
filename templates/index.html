@@ -3,6 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <title>アキネーター</title>
+    <script>
+        let startTime = {{ elapsed_time }};
+        function updateTime() {
+            const now = new Date().getTime() / 1000;
+            const elapsed = now - startTime;
+            document.getElementById('timer').innerText = elapsed.toFixed(2) + "秒";
+        }
+        setInterval(updateTime, 100);  // 100ミリ秒ごとに更新
+    </script>
 </head>
 <body>
     <h1>アキネーター</h1>
@@ -11,5 +20,6 @@
         <button type="submit" name="answer" value="はい">はい</button>
         <button type="submit" name="answer" value="いいえ">いいえ</button>
     </form>
+    <p>経過時間: <span id="timer">{{ elapsed_time }}</span>秒</p>
 </body>
 </html>

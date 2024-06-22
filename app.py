@@ -1,8 +1,9 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
 from flask_sqlalchemy import SQLAlchemy
 from dotenv import load_dotenv
 import os
+import time
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -84,9 +85,14 @@ answers = []
 @app.route('/')
 @login_required
 def index():
+    if 'start_time' not in session:
+        session['start_time'] = time.time()
+    
+    elapsed_time = time.time() - session['start_time'] if 'start_time' in session else 0
+
     if len(answers) < len(questions):
         question = questions[len(answers)]
-        return render_template('index.html', question=question)
+        return render_template('index.html', question=question, elapsed_time=elapsed_time)
     else:
         return redirect(url_for('result'))
 
@@ -105,13 +111,16 @@ def answer():
 @login_required
 def result():
     character = infer_character(answers)
-    return render_template('result.html', character=character)
+    elapsed_time = time.time() - session['start_time']
+    session.pop('start_time', None)
+    return render_template('result.html', character=character, elapsed_time=elapsed_time)
 
 @app.route('/reset')
 @login_required
 def reset():
     global answers
     answers = []
+    session.pop('start_time', None)
     return redirect(url_for('index'))
 
 @app.route('/login', methods=['GET', 'POST'])
