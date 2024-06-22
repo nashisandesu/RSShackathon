@@ -87,6 +87,7 @@ answers = []
 qa_history = []
 current_idx = 0
 answer = None
+elements_list = []
 @app.route('/')
 @login_required
 def index():
@@ -96,21 +97,15 @@ def index():
         session['start_time'] = time.time()
     
     elapsed_time = time.time() - session['start_time'] if 'start_time' in session else 0
-
     return render_template('index.html')
 
 @app.route('/select_mode', methods = ['POST'])
 def select_mode():
-    global answer
-    print('select_mode')
+    global answer, elements_list
     mode = request.form['mode']
-
-
-
-    if mode == 'アキネーター':
-        return redirect(url_for('mode_akinator'))
-    elif mode == 'ウミガメ':
-        answer = random.choice(other.simple)
+    elements_list = other.all_mode_elements[mode]
+    answer = answer = random.choice(elements_list)
+    if mode in {'初級', '中級', '上級', '超上級'}:
         return redirect(url_for('mode_umigame'))
     else:
         return redirect(url_for('index'))
@@ -145,20 +140,29 @@ def mode_umigame():
     
 @app.route('/mode_umigame_answer', methods=['POST', 'GET'])
 def mode_umigame_answer():
-    global answer
-    return render_template('mode_umigame_answer.html', elements = other.simple, qa_history = qa_history)
+    global answer, elements_list
+    return render_template('mode_umigame_answer.html', elements = elements_list, qa_history = qa_history)
+
+def get_image_path(symbol):
+    jpg_path = os.path.join(app.static_folder, f'elements/{symbol}.jpg')
+    if os.path.exists(jpg_path):
+        image_path = url_for('static', filename=f'elements/{symbol}.jpg')
+    else:
+        image_path = None
+    return image_path
 
 @app.route('/result', methods=['POST', 'GET'])
 def result():
     global answer
     user_answer_name = request.form['user_answer_name']
+    image_path = get_image_path(answer[1])
     elapsed_time = time.time() - session['start_time']
     session.pop('start_time', None)
     if answer[0] == user_answer_name:
         print('Yes')
-        return render_template('result.html', comment="正解！おめでとう！", user_answer = user_answer_name, true_answer = answer[0], qa_history = qa_history, elapsed_time=elapsed_time)
+        return render_template('result.html', judge=True, user_answer = user_answer_name, true_answer = answer[0], qa_history = qa_history, image_path = image_path, elapsed_time=elapsed_time)
     else:
-        return render_template('result.html', comment="残念！答えと違うよ！", user_answer = user_answer_name, true_answer = answer[0], qa_history = qa_history, elapsed_time=elapsed_time)
+        return render_template('result.html', judge=False, user_answer = user_answer_name, true_answer = answer[0], qa_history = qa_history, image_path = image_path, elapsed_time=elapsed_time)
 
 @app.route('/reset')
 @login_required
