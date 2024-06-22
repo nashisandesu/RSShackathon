@@ -1,20 +1,53 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>Ranking Page</title>
-</head>
-<body>
-    <h1>Top Scores</h1>
+{% extends "layout.html" %}
 
-    {% for level, scores in ranking_data.items() %}
-        <h2>{{ level }}</h2>
-        <ul>
-            {% for score in scores %}
-                <li>{{ score.user_name }}: {{ score.time }} seconds ({{ score.element }})</li>
-            {% endfor %}
-        </ul>
+{% block title %}
+Home - ウミガメ
+{% endblock %}
+{% block content %}
+
+{% for level, scores in ranking_data.items() %}
+<h2>{{ level }}</h2>
+<ul class="list-group mt-4 my-5">
+    {% for score in scores %}
+    <li class="list-group-item">
+        <div class="container text-center">
+            <div class="row">
+
+                {% if loop.index0 == 0 %}
+                <div class="col-1">
+                    <i class="bi bi-trophy-fill text-gold"></i>
+                </div>
+                {% elif loop.index0 == 1 %}
+                <div class="col-1">
+                    <i class="bi bi-award-fill text-silver"></i>
+                </div>
+                {% elif loop.index0 == 2 %}
+                <div class="col-1">
+                    <i class="bi bi-award text-bronze"></i>
+                </div>
+                {% else %}
+                <div class="col-1">
+                    
+                </div>
+                {% endif %}
+                <div class="col-1">
+                    第{{ loop.index0+1}}位
+                </div>
+                <div class="col-3">
+                    {{ score.user_name }}
+                </div>
+                <div class="col-3">
+                    {{ score.time }} seconds
+                </div>
+                <div class="col-2">
+                    ({{ score.element }})
+                </div>
+            </div>
+        </div>
+    </li>
+    <!-- 他のランク項目 -->
     {% endfor %}
-    
-</body>
-</html>
+
+</ul>
+{% endfor %}
+{% endblock %}
