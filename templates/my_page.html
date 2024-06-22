@@ -5,17 +5,24 @@
     <title>My Page</title>
 </head>
 <body>
-    <h1>Welcome, {{ user.name }}</h1>
-    <h2>Asks</h2>
+    <h1>Welcome, {{ username }}</h1>
+    
+    <h2>History</h2>
     <ul>
-        {% for ask in asks %}
-            <li>{{ ask.real_answer }}</li>
+        {% for item in history %}
+            <li>
+                Score: {{ item.score }},
+                Date: {{ item.date }},
+                Elements: {{ item.element }},
+                Is Collect: {{ item.is_collect }}
+            </li>
         {% endfor %}
     </ul>
-    <h2>Scores</h2>
+    
+    <h2>Collected Elements</h2>
     <ul>
-        {% for score in scores %}
-            <li>{{ score.difficulty_level }} - {{ score.time }}</li>
+        {% for element in collect_elements %}
+            <li>{{ element }}</li>
         {% endfor %}
     </ul>
 </body>
