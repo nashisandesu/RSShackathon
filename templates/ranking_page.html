@@ -4,6 +4,7 @@
 Home - ウミガメ
 {% endblock %}
 {% block content %}
+<script type="text/javascript" src="{{ url_for('static', filename='redirect.js') }}"></script>
 
 {% for level, scores in ranking_data.items() %}
 <h2>{{ level }}</h2>

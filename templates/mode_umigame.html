@@ -5,6 +5,7 @@
 Home - ウミガメモード
 {% endblock %}
 {% block content %}
+    <script type="text/javascript" src="{{ url_for('static', filename='redirect.js') }}"></script>
     <script type="text/javascript">
         let initialElapsedTime = {{ elapsed_time }};
         let startTime = new Date().getTime() / 1000 - initialElapsedTime;
