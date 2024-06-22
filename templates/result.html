@@ -8,5 +8,11 @@
     <h1>結果</h1>
     <p>あなたのキャラクターは {{ character }} です。</p>
     <a href="{{ url_for('reset') }}">もう一度やる</a>
+    <h2>これまでの質問と回答</h2>
+    <ul>
+        {% for q, a in qa_history %}
+            <li>{{ loop.index }}: {{ q }} - {{ a }}</li>
+        {% endfor %}
+    </ul>
 </body>
 </html>

@@ -1,6 +1,10 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, session
+import os
+import openai_api, other
+import random
 
 app = Flask(__name__)
+app.secret_key = os.urandom(24)
 
 # キャラクターとその特徴を定義
 characters = [
@@ -53,35 +57,81 @@ def infer_character(answers):
         return "特定のキャラクターを見つけることができませんでした。"
 
 answers = []
-
+qa_history = []
+current_idx = 0
+answer = None
 @app.route('/')
 def index():
-    if len(answers) < len(questions):
-        question = questions[len(answers)]
-        return render_template('index.html', question=question)
-    else:
-        return redirect(url_for('result'))
+    print('index')
+    return render_template('index.html')
+    # select_mode = []
+    # session['possible_characters'] = characters[:]
+    # if len(answers) < len(questions):
+    #     question = questions[len(answers)]
+    #     # return render_template('index.html', question=question)
+    #     return render_template('index.html', question=question, qa_history=qa_history)
+    # else:
+    #     return redirect(url_for('result'))
 
-@app.route('/answer', methods=['POST'])
-def answer():
-    answer = request.form['answer']
-    answers.append(answer)
+@app.route('/select_mode', methods = ['POST'])
+def select_mode():
+    global answer
+    print('select_mode')
+    mode = request.form['mode']
+    if mode == 'アキネーター':
+        # answer = random.choice(other.simple)
+        return redirect(url_for('mode_akinator'))
+    elif mode == 'ウミガメ':
+        answer = random.choice(other.simple)
+        return redirect(url_for('mode_umigame'))
+        # return redirect(url_for('result'))
+    else:
+        return redirect(url_for('index'))
+
+@app.route('/mode_umigame', methods=['POST', 'GET'])
+def mode_umigame():
+    global answer, qa_history, current_idx, answer
+    print('test')
     
-    if len(answers) >= len(questions):
-        return redirect(url_for('result'))
-    
-    return redirect(url_for('index'))
+    if request.method == 'POST':
+        # 質問内容
+        question = request.form['question']
+        # 「はい」か「いいえ」
+        while True:
+            ai_answer = openai_api.answer_ai(answer=answer, question=question)["answer"]
+            if ai_answer == 'Yes':
+                yn_answer = 'Yes'
+                break
+            elif ai_answer == 'No':
+                yn_answer = 'No'
+                break
+            else:
+                continue
+
+        answers.append(yn_answer)
+        qa_history.append((question, yn_answer))
+        current_idx += 1
+        
+        if len(answers) >= 3:
+            return redirect(url_for('result'))
+        else:
+            return render_template('mode_umigame.html', qa_history=qa_history)
+    else:
+        return render_template('mode_umigame.html', qa_history=qa_history)
 
 @app.route('/result')
 def result():
     character = infer_character(answers)
-    return render_template('result.html', character=character)
+    return render_template('result.html', character=character, qa_history = qa_history)
 
 @app.route('/reset')
 def reset():
-    global answers
+    global answers, current_idx, qa_history, answer
     answers = []
+    current_idx = 0
+    qa_history = []
+    answer = None
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, port=5002)
