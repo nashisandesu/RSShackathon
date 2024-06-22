@@ -307,24 +307,46 @@ def logout():
 @login_required
 def my_page():
     user_id = session.get('user_id')
-    users_with_asks_and_scores = (
+    
+    user_with_asks_and_scores = (
         db.session.query(User)
         .filter(User.id == user_id)
         .options(joinedload(User.asks).joinedload(Ask.scores))
-        .all()
+        .first()
     )
 
-    if users_with_asks_and_scores:
-        user = users_with_asks_and_scores[0]
+    if user_with_asks_and_scores:
+        user = user_with_asks_and_scores
         asks = user.asks
-        scores = [score for ask in asks for score in ask.scores]
+
+        history = []
+        for ask in asks:
+            for score in ask.scores:
+                history.append({
+                    "score": score.time,
+                    "date": score.start_date,
+                    "element": ask.real_answer,
+                    "is_collect": score.time is not None
+                })
+
+        collect_elements_query = (
+            db.session.query(Ask.real_answer)
+            .join(Score, Ask.id == Score.ask_id)
+            .filter(Ask.user_id == user_id, Score.time.isnot(None))
+            .distinct()
+            .all()
+        )
+        collect_elements = [element[0] for element in collect_elements_query]
+
+        username = user.name
     else:
         user = None
-        asks = []
-        scores = []
+        username = None
+        history = []
+        collect_elements = []
 
-    print(scores)
-    return render_template('my_page.html', user=user, asks=asks, scores=scores)
+    return render_template('my_page.html', username=username, history=history, collect_elements=collect_elements)
+
 
 @app.route('/ranking_page')
 @login_required
