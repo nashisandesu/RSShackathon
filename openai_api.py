@@ -1,8 +1,10 @@
 import os
 import openai
 import json
+from dotenv import load_dotenv
 
 # APIキーの設定
+load_dotenv()
 openai.api_key = os.environ["OPENAI_API_KEY"]
 
 def answer_ai(answer, question, res_format="json_object",tem = 0.5):
