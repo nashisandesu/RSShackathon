@@ -34,7 +34,8 @@ class Data(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     user_id = db.Column(db.Integer, nullable=False)
     question = db.Column(db.Text, nullable=False)
-    answer = db.Column(db.Boolean, nullable=False)
+    ai_answer = db.Column(db.Boolean, nullable=False)
+    real_answer = db.Column(db.String(10), nullable=False)
 
 with app.app_context():
     db.create_all()
@@ -97,7 +98,7 @@ def save_data(user_id, question, answer, real_answer):
     boolean_answer = True if answer.lower() == 'yes' else False
     try:
         with app.app_context():
-            db.session.add(Data(user_id=user_id, question=question, answer=boolean_answer, real_answer=real_answer))
+            db.session.add(Data(user_id=user_id, question=question, ai_answer=boolean_answer, real_answer=real_answer))
             db.session.commit()
             print("Data saved successfully")
     except Exception as e:
