@@ -3,8 +3,20 @@
 <head>
     <meta charset="UTF-8">
     <title>ウミガメモード</title>
+    <script type="text/javascript">
+        let initialElapsedTime = {{ elapsed_time }};
+        let startTime = new Date().getTime() / 1000 - initialElapsedTime;
+
+        function updateTime() {
+            const now = new Date().getTime() / 1000;
+            const elapsed = now - startTime;
+            document.getElementById('timer').innerText = elapsed.toFixed(1);
+        }
+
+        setInterval(updateTime, 100);  // 100ミリ秒ごとに更新
+    </script>
 </head>
-<body>
+<body onload="updateTime()">
     <h1>ウミガメモード</h1>
     <p>質問を入力してください</p>
     <form method="post" action="{{ url_for('mode_umigame') }}">
@@ -14,6 +26,7 @@
     <form method="post" action="{{ url_for('mode_umigame_answer') }}">
         <button type="submit">答えがわかった！</button>
     </form>
+    <p>経過時間: <span id="timer">{{ elapsed_time }}</span> 秒</p>
     <h2>これまでの質問と回答</h2>
     <ul>
         {% for q, a in qa_history %}

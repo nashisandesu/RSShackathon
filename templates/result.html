@@ -27,6 +27,7 @@
             <li>{{ loop.index }}: {{ q }} - {{ a }}</li>
         {% endfor %}
     </ul>
+    <p>結果: {{ elapsed_time }} 秒</p>
     <a href="{{ url_for('reset') }}">もう一度やる</a>
 </body>
 </html>

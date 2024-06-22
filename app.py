@@ -1,10 +1,12 @@
 import openai_api, other
+from flask import Flask, render_template, request, redirect, url_for, session
 from flask_login import LoginManager, UserMixin, login_user, logout_user, current_user, login_required
 from flask_sqlalchemy import SQLAlchemy
 from flask import Flask, render_template, request, redirect, url_for, session
 from dotenv import load_dotenv
 import random
 import os
+import time
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -88,12 +90,21 @@ answer = None
 @app.route('/')
 @login_required
 def index():
+    print('index')
+
+    if 'start_time' not in session:
+        session['start_time'] = time.time()
+    
+    elapsed_time = time.time() - session['start_time'] if 'start_time' in session else 0
     return render_template('index.html')
 
 @app.route('/select_mode', methods = ['POST'])
 def select_mode():
     global answer
     mode = request.form['mode']
+
+
+
     if mode == 'アキネーター':
         return redirect(url_for('mode_akinator'))
     elif mode == 'ウミガメ':
@@ -105,6 +116,7 @@ def select_mode():
 @app.route('/mode_umigame', methods=['POST', 'GET'])
 def mode_umigame():
     global answer, qa_history, current_idx, answer
+    elapsed_time = time.time() - session['start_time']
     if request.method == 'POST':
         # 質問内容
         question = request.form['question']
@@ -125,9 +137,9 @@ def mode_umigame():
         answers.append(yn_answer)
         qa_history.append((question, yn_answer))
         current_idx += 1
-        return render_template('mode_umigame.html', qa_history=qa_history)
+        return render_template('mode_umigame.html', qa_history=qa_history, elapsed_time=elapsed_time)
     else:
-        return render_template('mode_umigame.html', qa_history=qa_history)
+        return render_template('mode_umigame.html', qa_history=qa_history, elapsed_time=elapsed_time)
     
 @app.route('/mode_umigame_answer', methods=['POST', 'GET'])
 def mode_umigame_answer():
@@ -151,10 +163,13 @@ def result():
     global answer
     user_answer_name = request.form['user_answer_name']
     image_path = get_image_path(answer[1])
+    elapsed_time = time.time() - session['start_time']
+    session.pop('start_time', None)
     if answer[0] == user_answer_name:
-        return render_template('result.html', judge=True, user_answer = user_answer_name, true_answer = answer[0], qa_history = qa_history, image_path = image_path)
+        print('Yes')
+        return render_template('result.html', judge=True, user_answer = user_answer_name, true_answer = answer[0], qa_history = qa_history, image_path = image_path, elapsed_time=elapsed_time)
     else:
-        return render_template('result.html', judge=False, user_answer = user_answer_name, true_answer = answer[0], qa_history = qa_history, image_path = image_path)
+        return render_template('result.html', judge=False, user_answer = user_answer_name, true_answer = answer[0], qa_history = qa_history, image_path = image_path, elapsed_time=elapsed_time)
 
 @app.route('/reset')
 @login_required
@@ -164,6 +179,7 @@ def reset():
     current_idx = 0
     qa_history = []
     answer = None
+    session.pop('start_time', None)
     return redirect(url_for('index'))
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -194,7 +210,9 @@ def signup():
         new_user = User(name=name, password=password)
         db.session.add(new_user)
         db.session.commit()
-        return redirect(url_for('login'))
+        login_user(new_user)
+
+        return redirect(url_for('index'))
     return render_template('signup.html')
 
 @app.route('/logout')
