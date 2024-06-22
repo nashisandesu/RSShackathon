@@ -6,7 +6,17 @@
 </head>
 <body>
     <h1>結果</h1>
-    <p>あなたのキャラクターは {{ character }} です。</p>
+    <p>{{ comment }}</p>
+    <h2>あなたの解答 </h2>
+    <p>{{user_answer}}</p>
+    <h2>答え</h2>
+    <p>{{true_answer}}</p>
+    <h2>これまでの質問と回答</h2>
+    <ul>
+        {% for q, a in qa_history %}
+            <li>{{ loop.index }}: {{ q }} - {{ a }}</li>
+        {% endfor %}
+    </ul>
     <a href="{{ url_for('reset') }}">もう一度やる</a>
 </body>
 </html>

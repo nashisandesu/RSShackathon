@@ -2,14 +2,15 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>アキネーター</title>
+    <title>アキネーターウミガメ</title>
 </head>
 <body>
-    <h1>アキネーター</h1>
-    <p>{{ question }}</p>
-    <form action="{{ url_for('answer') }}" method="post">
-        <button type="submit" name="answer" value="はい">はい</button>
-        <button type="submit" name="answer" value="いいえ">いいえ</button>
+    <h1>アキネーターウミガメ</h1>
+    <p>モードを選んでね</p>
+
+    <form action="{{url_for('select_mode')}}" method="post">
+        <button type="submit" name="mode" value="アキネーター">アキネーター</button>
+        <button type="submit" name="mode" value="ウミガメ">ウミガメ</button>
     </form>
 </body>
 </html>

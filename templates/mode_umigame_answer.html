@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <h1>ウミガメモード</h1>
+    <p>答えを押してね</p>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>リストからボタンを作成</title>
+    <style>
+        .button-container {
+            display: flex;
+            flex-wrap: wrap;
+            margin: 10px 0;
+        }
+        button {
+            margin: 5px;
+        }
+    </style>
+    <h2>これまでの質問と回答</h2>
+    <ul>
+        {% for q, a in qa_history %}
+            <li>{{ loop.index }}: {{ q }} - {{ a }}</li>
+        {% endfor %}
+    </ul>
+</head>
+<body>
+    <div class="button-container">
+        {% for name, symbol in elements %}
+            <form action="{{ url_for('result') }}" method="post">
+                <input type="hidden" name="user_answer_name" value="{{ name }}">
+                <input type="hidden" name="user_answer_symbol" value="{{ symbol }}">
+                <button type="submit">{{ name }} - {{ alpha }}</button>
+            </form>
+        {% endfor %}
+    </div>
+</body>
+</html>
