@@ -1,0 +1,18 @@
+<!doctype html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>サインアップ</title>
+</head>
+<body>
+    <h1>サインアップ</h1>
+    <form method="post">
+        <label for="name">ユーザー名:</label>
+        <input type="text" id="name" name="name"><br>
+        <label for="password">パスワード:</label>
+        <input type="password" id="password" name="password"><br>
+        <input type="submit" value="サインアップ">
+    </form>
+    <p><a href="{{ url_for('login') }}">ログインはこちら</a></p>
+</body>
+</html>
