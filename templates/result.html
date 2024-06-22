@@ -6,7 +6,17 @@
 </head>
 <body>
     <h1>結果</h1>
+    {% if judge %}
+    <p>おめでとう！正解は{{true_answer}}だね！！</p>
+    {% else %}
+    <p>残念...正解は{{true_answer}}だよ！</p>
+    {% endif %}
     <p>{{ comment }}</p>
+    {% if image_path %}
+    <img src="{{ image_path }}" alt="{{ true_answer }}" width="300" height="200">
+    {% else %}
+        <p>対応する画像が見つかりませんでした。</p>
+    {% endif %}
     <h2>あなたの解答 </h2>
     <p>{{user_answer}}</p>
     <h2>答え</h2>
