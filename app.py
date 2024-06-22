@@ -9,6 +9,7 @@ import os
 import time
 import threading
 from datetime import datetime
+from sqlalchemy.orm import joinedload
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -30,24 +31,26 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
+    asks = db.relationship('Ask', backref='user', lazy=True)
 
 class Data(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     question = db.Column(db.Text, nullable=False)
     ai_answer = db.Column(db.Boolean, nullable=False)
-    ask_id = db.Column(db.Integer, nullable=False)
+    ask_id = db.Column(db.Integer, db.ForeignKey('ask.id'), nullable=False)
 
 class Score(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    ask_id = db.Column(db.Integer, nullable=False)
+    ask_id = db.Column(db.Integer, db.ForeignKey('ask.id'), nullable=False)
     start_date = db.Column(db.DateTime, nullable=False)
     difficulty_level = db.Column(db.String(100), nullable=False)
-    time = db.Column(db.Numeric(18, 9), nullable=False)
+    time = db.Column(db.Numeric(18, 9))
 
 class Ask(db.Model):
     id = db.Column(db.Integer, primary_key=True)
-    user_id = db.Column(db.Integer, nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     real_answer = db.Column(db.String(100), nullable=False)
+    scores = db.relationship('Score', backref='ask', lazy=True)
 
 with app.app_context():
     db.create_all()
@@ -235,14 +238,16 @@ def result():
     user_answer_name = request.form['user_answer_name']
     image_path = get_image_path(answer[1])
     elapsed_time = time.time() - session['start_time']
+    ask_id = session.get('ask_id')
+    difficulty_level = session.get('difficulty_level')
     if answer[0] == user_answer_name:
-        ask_id = session.get('ask_id')
-        difficulty_level = session.get('difficulty_level')
         if ask_id:
             threading.Thread(target=save_score, args=(ask_id, datetime.now(), difficulty_level, elapsed_time)).start()
         print('Yes')
         return render_template('result.html', judge=True, user_answer = user_answer_name, true_answer = answer[0], qa_history = qa_history, image_path = image_path, elapsed_time=elapsed_time)
     else:
+        if ask_id:
+            threading.Thread(target=save_score, args=(ask_id, datetime.now(), difficulty_level, None)).start()
         return render_template('result.html', judge=False, user_answer = user_answer_name, true_answer = answer[0], qa_history = qa_history, image_path = image_path, elapsed_time=elapsed_time)
 
 @app.route('/reset')
@@ -297,6 +302,57 @@ def logout():
     logout_user()
     session.pop('user_id', None)
     return redirect(url_for('login'))
+
+@app.route('/my_page')
+@login_required
+def my_page():
+    user_id = session.get('user_id')
+    users_with_asks_and_scores = (
+        db.session.query(User)
+        .filter(User.id == user_id)
+        .options(joinedload(User.asks).joinedload(Ask.scores))
+        .all()
+    )
+
+    if users_with_asks_and_scores:
+        user = users_with_asks_and_scores[0]
+        asks = user.asks
+        scores = [score for ask in asks for score in ask.scores]
+    else:
+        user = None
+        asks = []
+        scores = []
+
+    print(scores)
+    return render_template('my_page.html', user=user, asks=asks, scores=scores)
+
+@app.route('/ranking_page')
+@login_required
+def ranking_page():
+    levels = ["初級", "中級", "上級"]
+    ranking_data = {}
+
+    for level in levels:
+        top_scores = (
+            db.session.query(Score, Ask, User)
+            .join(Ask, Score.ask_id == Ask.id)
+            .join(User, Ask.user_id == User.id)
+            .filter(Score.time.isnot(None), Score.difficulty_level == level)
+            .order_by(Score.time.asc())
+            .limit(10)
+            .all()
+        )
+
+        ranking_data[level] = [
+            {
+                "user_name": score.User.name,
+                "time": score.Score.time,
+                "element": score.Ask.real_answer
+            }
+            for score in top_scores
+        ]
+
+    return render_template('ranking_page.html', ranking_data=ranking_data)
 
 if __name__ == '__main__':
     if os.getenv('DOCKER'):

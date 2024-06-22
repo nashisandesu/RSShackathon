@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Ranking Page</title>
+</head>
+<body>
+    <h1>Top Scores</h1>
+
+    {% for level, scores in ranking_data.items() %}
+        <h2>{{ level }}</h2>
+        <ul>
+            {% for score in scores %}
+                <li>{{ score.user_name }}: {{ score.time }} seconds ({{ score.element }})</li>
+            {% endfor %}
+        </ul>
+    {% endfor %}
+    
+</body>
+</html>
