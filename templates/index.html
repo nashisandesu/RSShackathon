@@ -3,23 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <title>アキネーター</title>
-    <script>
-        let startTime = {{ elapsed_time }};
+    <script type="text/javascript">
+        let initialElapsedTime = {{ elapsed_time }};
+        let startTime = new Date().getTime() / 1000 - initialElapsedTime;
+
         function updateTime() {
             const now = new Date().getTime() / 1000;
             const elapsed = now - startTime;
-            document.getElementById('timer').innerText = elapsed.toFixed(2) + "秒";
+            document.getElementById('timer').innerText = elapsed.toFixed(2);
         }
+
         setInterval(updateTime, 100);  // 100ミリ秒ごとに更新
     </script>
 </head>
-<body>
+<body onload="updateTime()">  <!-- ページロード時にupdateTimeを呼び出す -->
     <h1>アキネーター</h1>
     <p>{{ question }}</p>
     <form action="{{ url_for('answer') }}" method="post">
         <button type="submit" name="answer" value="はい">はい</button>
         <button type="submit" name="answer" value="いいえ">いいえ</button>
     </form>
-    <p>経過時間: <span id="timer">{{ elapsed_time }}</span>秒</p>
+    <p>経過時間: <span id="timer">{{ elapsed_time }}</span> 秒</p>
 </body>
 </html>
