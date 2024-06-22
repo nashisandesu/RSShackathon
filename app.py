@@ -93,11 +93,11 @@ def infer_character(answers):
     else:
         return "特定のキャラクターを見つけることができませんでした。"
 
-def save_data(user_id, question, answer):
+def save_data(user_id, question, answer, real_answer):
     boolean_answer = True if answer.lower() == 'yes' else False
     try:
         with app.app_context():
-            db.session.add(Data(user_id=user_id, question=question, answer=boolean_answer))
+            db.session.add(Data(user_id=user_id, question=question, answer=boolean_answer, real_answer=real_answer))
             db.session.commit()
             print("Data saved successfully")
     except Exception as e:
@@ -157,7 +157,7 @@ def mode_umigame():
 
         user_id = session.get('user_id')
         if user_id and yn_answer:
-            threading.Thread(target=save_data, args=(user_id, question, yn_answer)).start()
+            threading.Thread(target=save_data, args=(user_id, question, yn_answer, answer[0])).start()
 
         answers.append(yn_answer)
         qa_history.append((question, yn_answer))
