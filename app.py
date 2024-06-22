@@ -37,6 +37,13 @@ class Data(db.Model):
     ai_answer = db.Column(db.Boolean, nullable=False)
     real_answer = db.Column(db.String(10), nullable=False)
 
+class Score(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=False)
+    start_date = db.Column(db.Numeric(18, 9), nullable=False)
+    difficulty_level = db.Column(db.String(100), nullable=False)
+    time = db.Column(db.Numeric(18, 9), nullable=False)
+
 with app.app_context():
     db.create_all()
 
@@ -101,6 +108,17 @@ def save_data(user_id, question, answer, real_answer):
             db.session.add(Data(user_id=user_id, question=question, ai_answer=boolean_answer, real_answer=real_answer))
             db.session.commit()
             print("Data saved successfully")
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error saving data: {e}")
+
+def save_score(user_id, start_date, difficulty_level, time):
+    session.pop('start_time', None)
+    try:
+        with app.app_context():
+            db.session.add(Data(user_id=user_id, start_date=start_date, difficulty_level=difficulty_level, time=time))
+            db.session.commit()
+            print("Score saved successfully")
     except Exception as e:
         db.session.rollback()
         print(f"Error saving data: {e}")
@@ -190,8 +208,10 @@ def result():
     user_answer_name = request.form['user_answer_name']
     image_path = get_image_path(answer[1])
     elapsed_time = time.time() - session['start_time']
-    session.pop('start_time', None)
     if answer[0] == user_answer_name:
+        user_id = session.get('user_id')
+        if user_id:
+            threading.Thread(target=save_score, args=(user_id, session['start_time'], "ウミガメ", elapsed_time)).start()
         print('Yes')
         return render_template('result.html', judge=True, user_answer = user_answer_name, true_answer = answer[0], qa_history = qa_history, image_path = image_path, elapsed_time=elapsed_time)
     else:
