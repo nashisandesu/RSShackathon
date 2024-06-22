@@ -144,9 +144,9 @@ def mode_umigame_answer():
     return render_template('mode_umigame_answer.html', elements = elements_list, qa_history = qa_history)
 
 def get_image_path(symbol):
-    jpg_path = os.path.join(app.static_folder, f'elements/{symbol}.jpg')
+    jpg_path = os.path.join(app.static_folder, f'elementsJPG/{symbol}.jpg')
     if os.path.exists(jpg_path):
-        image_path = url_for('static', filename=f'elements/{symbol}.jpg')
+        image_path = url_for('static', filename=f'elementsJPG/{symbol}.jpg')
     else:
         image_path = None
     return image_path
