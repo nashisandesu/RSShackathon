@@ -7,6 +7,8 @@ from dotenv import load_dotenv
 import random
 import os
 import time
+import threading
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -29,9 +31,30 @@ class User(UserMixin, db.Model):
     name = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
 
+class Data(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    question = db.Column(db.Text, nullable=False)
+    ai_answer = db.Column(db.Boolean, nullable=False)
+    ask_id = db.Column(db.Integer, nullable=False)
+
+class Score(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    ask_id = db.Column(db.Integer, nullable=False)
+    start_date = db.Column(db.DateTime, nullable=False)
+    difficulty_level = db.Column(db.String(100), nullable=False)
+    time = db.Column(db.Numeric(18, 9), nullable=False)
+
+class Ask(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=False)
+    real_answer = db.Column(db.String(100), nullable=False)
+
+with app.app_context():
+    db.create_all()
+
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, user_id)
 
 # キャラクターとその特徴を定義
 characters = [
@@ -83,6 +106,39 @@ def infer_character(answers):
     else:
         return "特定のキャラクターを見つけることができませんでした。"
 
+def save_ask(user_id, real_answer):
+    try:
+        with app.app_context():
+            new_ask = Ask(user_id=user_id, real_answer=real_answer)
+            db.session.add(new_ask)
+            db.session.commit()
+            print("Ask saved successfully")
+            return new_ask.id
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error saving data: {e}")
+
+def save_data(question, answer, ask_id):
+    boolean_answer = True if answer.lower() == 'yes' else False
+    try:
+        with app.app_context():
+            db.session.add(Data(question=question, ai_answer=boolean_answer, ask_id=ask_id))
+            db.session.commit()
+            print("Data saved successfully")
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error saving data: {e}")
+
+def save_score(ask_id, start_date, difficulty_level, time):
+    try:
+        with app.app_context():
+            db.session.add(Score(ask_id=ask_id, start_date=start_date, difficulty_level=difficulty_level, time=time))
+            db.session.commit()
+            print("Score saved successfully")
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error saving data: {e}")
+
 answers = []
 qa_history = []
 current_idx = 0
@@ -105,6 +161,12 @@ def select_mode():
     mode = request.form['mode']
     elements_list = other.all_mode_elements[mode]
     answer = answer = random.choice(elements_list)
+    session['difficulty_level'] = mode
+    user_id = session.get('user_id')
+    if user_id:
+        ask_id = save_ask(user_id, answer[0])
+        session['ask_id'] = ask_id
+
     if mode in {'初級', '中級', '上級', '超上級'}:
         return redirect(url_for('mode_umigame'))
     else:
@@ -131,6 +193,10 @@ def mode_umigame():
         else:
             exit()
 
+        ask_id = session.get('ask_id')
+        if ask_id and yn_answer:
+            threading.Thread(target=save_data, args=(question, yn_answer, ask_id)).start()
+
         answers.append(yn_answer)
         qa_history.append((question, yn_answer))
         current_idx += 1
@@ -151,14 +217,29 @@ def get_image_path(symbol):
         image_path = None
     return image_path
 
+def get_image_path(symbol):
+    png_path = os.path.join(app.static_folder, f'elements/{symbol}.png')
+    jpg_path = os.path.join(app.static_folder, f'elements/{symbol}.jpg')
+
+    if os.path.exists(png_path):
+        image_path = url_for('static', filename=f'elements/{symbol}.png')
+    elif os.path.exists(jpg_path):
+        image_path = url_for('static', filename=f'elements/{symbol}.jpg')
+    else:
+        image_path = None
+    return image_path
+
 @app.route('/result', methods=['POST', 'GET'])
 def result():
     global answer
     user_answer_name = request.form['user_answer_name']
     image_path = get_image_path(answer[1])
     elapsed_time = time.time() - session['start_time']
-    session.pop('start_time', None)
     if answer[0] == user_answer_name:
+        ask_id = session.get('ask_id')
+        difficulty_level = session.get('difficulty_level')
+        if ask_id:
+            threading.Thread(target=save_score, args=(ask_id, datetime.now(), difficulty_level, elapsed_time)).start()
         print('Yes')
         return render_template('result.html', judge=True, user_answer = user_answer_name, true_answer = answer[0], qa_history = qa_history, image_path = image_path, elapsed_time=elapsed_time)
     else:
@@ -183,6 +264,7 @@ def login():
         user = User.query.filter_by(name=name).first()
         if user and user.password == password:
             login_user(user)
+            session['user_id'] = user.id
             return redirect(url_for('index'))
         else:
             return "Invalid credentials"
@@ -204,6 +286,7 @@ def signup():
         db.session.add(new_user)
         db.session.commit()
         login_user(new_user)
+        session['user_id'] = new_user.id
 
         return redirect(url_for('index'))
     return render_template('signup.html')
@@ -212,6 +295,7 @@ def signup():
 @login_required
 def logout():
     logout_user()
+    session.pop('user_id', None)
     return redirect(url_for('login'))
 
 if __name__ == '__main__':
