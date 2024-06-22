@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>アキネーター</title>
+</head>
+<body>
+    <h1>アキネーター</h1>
+    <p>{{ question }}</p>
+    <form action="{{ url_for('answer') }}" method="post">
+        <button type="submit" name="answer" value="はい">はい</button>
+        <button type="submit" name="answer" value="いいえ">いいえ</button>
+    </form>
+</body>
+</html>
