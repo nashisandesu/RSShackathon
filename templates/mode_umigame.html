@@ -19,6 +19,7 @@
 <body onload="updateTime()">
     <h1>ウミガメモード</h1>
     <p>質問を入力してください</p>
+    <!-- ここに本当はモード別の説明を入れたい ex)原子番号1~20の元素が出題されるよ！-->
     <form method="post" action="{{ url_for('mode_umigame') }}">
         <input type="text" name="question" required>
         <button type="submit">送信</button>
