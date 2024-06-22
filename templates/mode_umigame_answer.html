@@ -40,7 +40,7 @@
                 <form action="{{ url_for('result') }}" method="post">
                     <input type="hidden" name="user_answer_name" value="{{ name }}">
                     <input type="hidden" name="user_answer_symbol" value="{{ symbol }}">
-                    <button type="submit" class="btn btn-outline-dark">{{ name }} - {{ symbol }}</button>
+                    <button type="submit" class="btn btn-outline-dark mx-1 my-1">{{ name }} - {{ symbol }}</button>
 
                 </form>
                 {% endfor %}

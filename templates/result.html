@@ -4,6 +4,17 @@
 <head>
     <meta charset="UTF-8">
     <title>結果</title>
+    <style>
+        #particles-js {
+            position: fixed;
+            /*描画固定*/
+            z-index: 1;
+            /*描画を一番下に*/
+            width: 100%;
+            height: 100%;
+            /*背景色*/
+        }
+    </style>
 </head>
 
 <body>
@@ -20,6 +31,7 @@
             <h1>結果</h1>
             {% if judge %}
             <p>おめでとう！正解は{{true_answer}}だね！！</p>
+            <div id="particles-js"></div>
             {% else %}
             <p>残念...正解は{{true_answer}}だよ！</p>
             {% endif %}
@@ -33,14 +45,29 @@
             <p>{{user_answer}}</p>
             <h2>答え</h2>
             <p>{{true_answer}}</p>
+            <p>解答時間: {{ elapsed_time }} 秒</p>
             <h2>これまでの質問と回答</h2>
-            <ul>
-                {% for q, a in qa_history %}
-                <li>{{ loop.index }}: {{ q }} - {{ a }}</li>
-                {% endfor %}
-            </ul>
-            <p>結果: {{ elapsed_time }} 秒</p>
-            <a href="{{ url_for('reset') }}">もう一度やる</a>
+            <div class="overflow-auto" style="max-height: 50vh;">
+
+                <ul>
+                    {% for q, a in qa_history %}
+                    <div class="card">
+                        <div class="card-header text-left">
+                            Q{{loop.index}}:{{q}}
+                        </div>
+                        <ul class="list-group list-group-horizontal text-center">
+                            <li
+                                class="list-group-item flex-fill {% if 'Y' in a %}list-group-item-info{% else %}bg-light-subtle{% endif %}">
+                                Yes</li>
+                            <li
+                                class="list-group-item flex-fill {% if 'N' in a %}list-group-item-info{% else %}bg-light-subtle{% endif %}">
+                                No</li>
+                        </ul>
+                    </div>
+                    {% endfor %}
+                </ul>
+            </div>
+            <a href="{{ url_for('reset') }}"><button type="button" class="btn btn-outline-success my-5">もう一度やる</button></a>
 
         </div>
     </main>
@@ -49,7 +76,84 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"
         integrity="sha384-geWF76RCwLtnZ8qwWowPQNguL3RmwHVBC9FhGdlKrxdiJJigb/j/68SIy3Te4Bkz"
         crossorigin="anonymous"></script>
-        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
+    <script src="https://cdn.jsdelivr.net/particles.js/2.0.0/particles.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"
+        integrity="sha384-XGjxtQfXaH2tnPFa9x+ruJTuLE3Aa6LhHSWRr1XeTyhezb4abCG4ccI5AkVDxqC+" crossorigin="anonymous">
+    <script>
+        particlesJS("particles-js", {
+            "particles": {
+                "number": {
+                    "value": 125,//この数値を変更すると紙吹雪の数が増減できる
+                    "density": {
+                        "enable": false,
+                        "value_area": 400
+                    }
+                },
+                "color": {
+                    "value": ["#EA5532", "#F6AD3C", "#FFF33F", "#00A95F", "#00ADA9", "#00AFEC", "#4D4398", "#E85298"]//紙吹雪の色の数を増やすことが出来る
+                },
+                "shape": {
+                    "type": "polygon",//形状はpolygonを指定
+                    "stroke": {
+                        "width": 0,
+                    },
+                    "polygon": {
+                        "nb_sides": 5//多角形の角の数
+                    }
+                },
+                "opacity": {
+                    "value": 1,
+                    "random": false,
+                    "anim": {
+                        "enable": true,
+                        "speed": 20,
+                        "opacity_min": 0,
+                        "sync": false
+                    }
+                },
+                "size": {
+                    "value": 5.305992965476349,
+                    "random": true,//サイズをランダムに
+                    "anim": {
+                        "enable": true,
+                        "speed": 1.345709068776642,
+                        "size_min": 0.8,
+                        "sync": false
+                    }
+                },
+                "line_linked": {
+                    "enable": false,
+                },
+                "move": {
+                    "enable": true,
+                    "speed": 10,//この数値を小さくするとゆっくりな動きになる
+                    "direction": "bottom",//下に向かって落ちる
+                    "random": false,//動きはランダムにならないように
+                    "straight": false,//動きをとどめない
+                    "out_mode": "out",//画面の外に出るように描写
+                    "bounce": false,//跳ね返りなし
+                    "attract": {
+                        "enable": false,
+                        "rotateX": 600,
+                        "rotateY": 1200
+                    }
+                }
+            },
+            "interactivity": {
+                "detect_on": "canvas",
+                "events": {
+                    "onhover": {
+                        "enable": false,
+                    },
+                    "onclick": {
+                        "enable": false,
+                    },
+                    "resize": true
+                },
+            },
+            "retina_detect": true
+        });
+    </script>
 </body>
 
 
