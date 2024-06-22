@@ -11,6 +11,9 @@
         <input type="text" name="question" required>
         <button type="submit">送信</button>
     </form>
+    <form method="post" action="{{ url_for('mode_umigame_answer') }}">
+        <button type="submit">答えがわかった！</button>
+    </form>
     <h2>これまでの質問と回答</h2>
     <ul>
         {% for q, a in qa_history %}
