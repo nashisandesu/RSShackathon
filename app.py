@@ -8,6 +8,7 @@ import random
 import os
 import time
 import threading
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -39,7 +40,7 @@ class Data(db.Model):
 class Score(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     ask_id = db.Column(db.Integer, nullable=False)
-    start_date = db.Column(db.Numeric(18, 9), nullable=False)
+    start_date = db.Column(db.DateTime, nullable=False)
     difficulty_level = db.Column(db.String(100), nullable=False)
     time = db.Column(db.Numeric(18, 9), nullable=False)
 
@@ -53,7 +54,7 @@ with app.app_context():
 
 @login_manager.user_loader
 def load_user(user_id):
-    return User.query.get(int(user_id))
+    return db.session.get(User, user_id)
 
 # キャラクターとその特徴を定義
 characters = [
@@ -108,29 +109,30 @@ def infer_character(answers):
 def save_ask(user_id, real_answer):
     try:
         with app.app_context():
-            db.session.add(Ask(user_id=user_id, real_answer=real_answer))
+            new_ask = Ask(user_id=user_id, real_answer=real_answer)
+            db.session.add(new_ask)
             db.session.commit()
             print("Ask saved successfully")
+            return new_ask.id
     except Exception as e:
         db.session.rollback()
         print(f"Error saving data: {e}")
 
-def save_data(user_id, question, answer, real_answer):
+def save_data(question, answer, ask_id):
     boolean_answer = True if answer.lower() == 'yes' else False
     try:
         with app.app_context():
-            db.session.add(Data(user_id=user_id, question=question, ai_answer=boolean_answer, real_answer=real_answer))
+            db.session.add(Data(question=question, ai_answer=boolean_answer, ask_id=ask_id))
             db.session.commit()
             print("Data saved successfully")
     except Exception as e:
         db.session.rollback()
         print(f"Error saving data: {e}")
 
-def save_score(user_id, start_date, difficulty_level, time):
-    session.pop('start_time', None)
+def save_score(ask_id, start_date, difficulty_level, time):
     try:
         with app.app_context():
-            db.session.add(Data(user_id=user_id, start_date=start_date, difficulty_level=difficulty_level, time=time))
+            db.session.add(Score(ask_id=ask_id, start_date=start_date, difficulty_level=difficulty_level, time=time))
             db.session.commit()
             print("Score saved successfully")
     except Exception as e:
@@ -159,6 +161,12 @@ def select_mode():
     mode = request.form['mode']
     elements_list = other.all_mode_elements[mode]
     answer = answer = random.choice(elements_list)
+    session['difficulty_level'] = mode
+    user_id = session.get('user_id')
+    if user_id:
+        ask_id = save_ask(user_id, answer[0])
+        session['ask_id'] = ask_id
+
     if mode in {'初級', '中級', '上級', '超上級'}:
         return redirect(url_for('mode_umigame'))
     else:
@@ -185,9 +193,9 @@ def mode_umigame():
         else:
             exit()
 
-        user_id = session.get('user_id')
-        if user_id and yn_answer:
-            threading.Thread(target=save_data, args=(user_id, question, yn_answer, answer[0])).start()
+        ask_id = session.get('ask_id')
+        if ask_id and yn_answer:
+            threading.Thread(target=save_data, args=(question, yn_answer, ask_id)).start()
 
         answers.append(yn_answer)
         qa_history.append((question, yn_answer))
@@ -228,9 +236,10 @@ def result():
     image_path = get_image_path(answer[1])
     elapsed_time = time.time() - session['start_time']
     if answer[0] == user_answer_name:
-        user_id = session.get('user_id')
-        if user_id:
-            threading.Thread(target=save_score, args=(user_id, session['start_time'], "ウミガメ", elapsed_time)).start()
+        ask_id = session.get('ask_id')
+        difficulty_level = session.get('difficulty_level')
+        if ask_id:
+            threading.Thread(target=save_score, args=(ask_id, datetime.now(), difficulty_level, elapsed_time)).start()
         print('Yes')
         return render_template('result.html', judge=True, user_answer = user_answer_name, true_answer = answer[0], qa_history = qa_history, image_path = image_path, elapsed_time=elapsed_time)
     else:
@@ -277,7 +286,7 @@ def signup():
         db.session.add(new_user)
         db.session.commit()
         login_user(new_user)
-        session['user_id'] = user.id
+        session['user_id'] = new_user.id
 
         return redirect(url_for('index'))
     return render_template('signup.html')
