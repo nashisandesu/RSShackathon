@@ -12,7 +12,8 @@ from datetime import datetime
 from sqlalchemy.orm import joinedload
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)
+# app.secret_key = os.urandom(24)
+app.secret_key = 'Y9_tO92pEmGy5Q-Xk7BjNxG9EpKfDlTxV2g6V2wG5Fc'
 
 # AWS RDSの接続情報を設定
 load_dotenv()
@@ -58,40 +59,6 @@ with app.app_context():
 @login_manager.user_loader
 def load_user(user_id):
     return db.session.get(User, user_id)
-
-# キャラクターとその特徴を定義
-characters = [
-    {
-        'name': 'ピカチュウ',
-        'features': {
-            '実在': False,
-            '有名': True,
-            '男性': False
-        }
-    },
-    {
-        'name': '安倍晋三',
-        'features': {
-            '実在': True,
-            '有名': True,
-            '男性': True
-        }
-    }
-    # 他のキャラクターも追加
-]
-
-# 質問と特徴の対応を定義
-questions = [
-    "あなたのキャラクターは実在しますか？",
-    "あなたのキャラクターは有名ですか？",
-    "あなたのキャラクターは男性ですか？"
-]
-
-features_map = {
-    "あなたのキャラクターは実在しますか？": '実在',
-    "あなたのキャラクターは有名ですか？": '有名',
-    "あなたのキャラクターは男性ですか？": '男性'
-}
 
 # 推論エンジンを実装
 def infer_character(answers):
@@ -142,28 +109,21 @@ def save_score(ask_id, start_date, difficulty_level, time):
         db.session.rollback()
         print(f"Error saving data: {e}")
 
-answers = []
-qa_history = []
-current_idx = 0
-answer = None
-elements_list = []
 @app.route('/')
 @login_required
 def index():
     print('index')
-
-    if 'start_time' not in session:
-        session['start_time'] = time.time()
-    
+    clear_session()
     elapsed_time = time.time() - session['start_time'] if 'start_time' in session else 0
     return render_template('index.html')
 
 @app.route('/select_mode', methods = ['POST'])
+@login_required
 def select_mode():
-    global answer, elements_list
+    answers = session.get('answers', [])
     mode = request.form['mode']
-    elements_list = other.all_mode_elements[mode]
-    answer = answer = random.choice(elements_list)
+    session['elements_list'] = elements_list = other.all_mode_elements[mode]
+    session['answer'] = answer = random.choice(elements_list)
     session['difficulty_level'] = mode
     user_id = session.get('user_id')
     if user_id:
@@ -176,9 +136,21 @@ def select_mode():
         return redirect(url_for('index'))
 
 @app.route('/mode_umigame', methods=['POST', 'GET'])
+@login_required
 def mode_umigame():
-    global answer, qa_history, current_idx, answer
+    if 'start_time' not in session:
+        session['start_time'] = time.time()
+    answers = session.get('answers', [])
+    qa_history = session.get('qa_history', [])
+    elements_list = session.get('elements_list', [])
+    if 'current_idx' not in session:
+        session['current_idx'] = 0
+    else:
+        current_idx = session.get('current_idx')
+    answer = session.get('answer', [])
+
     elapsed_time = time.time() - session['start_time']
+    elements_list = session.get('elements_list', [])
     if request.method == 'POST':
         # 質問内容
         question = request.form['question']
@@ -200,16 +172,24 @@ def mode_umigame():
         if ask_id and yn_answer:
             threading.Thread(target=save_data, args=(question, yn_answer, ask_id)).start()
 
+        answers = session.get('answers', [])
         answers.append(yn_answer)
+        session['answers'] = answers
+
+        qa_history = session.get('qa_history', [])
         qa_history.append((question, yn_answer))
+        session['qa_history'] = qa_history
+
         current_idx += 1
         return render_template('mode_umigame.html', qa_history=qa_history, elapsed_time=elapsed_time)
     else:
         return render_template('mode_umigame.html', qa_history=qa_history, elapsed_time=elapsed_time)
     
 @app.route('/mode_umigame_answer', methods=['POST', 'GET'])
+@login_required
 def mode_umigame_answer():
-    global answer, elements_list
+    qa_history = session.get('qa_history', [])
+    elements_list = session.get('elements_list', [])
     return render_template('mode_umigame_answer.html', elements = elements_list, qa_history = qa_history)
 
 def get_image_path(symbol):
@@ -233,9 +213,11 @@ def get_image_path(symbol):
     return image_path
 
 @app.route('/result', methods=['POST', 'GET'])
+@login_required
 def result():
-    global answer
+    answer = session.get('answer', [])
     user_answer_name = request.form['user_answer_name']
+    qa_history = session.get('qa_history', [])
     image_path = get_image_path(answer[1])
     elapsed_time = time.time() - session['start_time']
     ask_id = session.get('ask_id')
@@ -253,13 +235,15 @@ def result():
 @app.route('/reset')
 @login_required
 def reset():
-    global answers, current_idx, qa_history, answer
-    answers = []
-    current_idx = 0
-    qa_history = []
-    answer = None
-    session.pop('start_time', None)
+    clear_session()
     return redirect(url_for('index'))
+
+def clear_session():
+    user_id = session.get('user_id')
+    _user_id = session.get('_user_id')
+    session.clear()
+    session['_user_id'] = _user_id
+    session['user_id'] = user_id
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
@@ -300,12 +284,13 @@ def signup():
 @login_required
 def logout():
     logout_user()
-    session.pop('user_id', None)
+    session.clear()
     return redirect(url_for('login'))
 
 @app.route('/my_page')
 @login_required
 def my_page():
+    clear_session()
     user_id = session.get('user_id')
     
     user_with_asks_and_scores = (
@@ -351,6 +336,7 @@ def my_page():
 @app.route('/ranking_page')
 @login_required
 def ranking_page():
+    clear_session()
     levels = ["初級", "中級", "上級"]
     ranking_data = {}
 
