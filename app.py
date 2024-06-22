@@ -111,7 +111,7 @@ def mode_umigame():
         # 質問内容
         question = request.form['question']
         # 「はい」か「いいえ」
-        while True:
+        for _ in range(10):
             ai_answer = openai_api.answer_ai(answer=answer, question=question,tem=0.5)["answer"]
             if ai_answer == 'Yes':
                 yn_answer = 'Yes'
@@ -121,6 +121,8 @@ def mode_umigame():
                 break
             else:
                 continue
+        else:
+            exit()
 
         answers.append(yn_answer)
         qa_history.append((question, yn_answer))
@@ -134,15 +136,15 @@ def mode_umigame_answer():
     global answer
     return render_template('mode_umigame_answer.html', elements = other.simple, qa_history = qa_history)
 
-@app.route('/result')
+@app.route('/result', methods=['POST', 'GET'])
 def result():
     global answer
     user_answer_name = request.form['user_answer_name']
     if answer[0] == user_answer_name:
         print('Yes')
-        return render_template('result.html', comment="正解！おめでとう！", user_answer = user_answer_name, true_answer = answer[0])
+        return render_template('result.html', comment="正解！おめでとう！", user_answer = user_answer_name, true_answer = answer[0], qa_history = qa_history)
     else:
-        return render_template('result.html', comment="残念！答えと違うよ！", user_answer = user_answer_name, true_answer = answer[0])
+        return render_template('result.html', comment="残念！答えと違うよ！", user_answer = user_answer_name, true_answer = answer[0], qa_history = qa_history)
 
 @app.route('/reset')
 @login_required
@@ -195,4 +197,4 @@ if __name__ == '__main__':
     if os.getenv('DOCKER'):
         app.run(host='0.0.0.0', port=5000, debug=True)
     else:
-        app.run(debug=True)
+        app.run(debug=True, port = 5001)

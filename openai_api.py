@@ -5,7 +5,7 @@ import json
 # APIキーの設定
 openai.api_key = os.environ["OPENAI_API_KEY"]
 
-def answer_ai(answer, question, res_format="json_object",tem = 0):
+def answer_ai(answer, question, res_format="json_object",tem = 0.5):
     prompt = """You are a helpful assistant designed to output JSON.Include questions and their answers in the content. For example, {
     "question": "Is an apple red?",
     "answer": "Yes"
