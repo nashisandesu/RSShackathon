@@ -10,7 +10,7 @@
         function updateTime() {
             const now = new Date().getTime() / 1000;
             const elapsed = now - startTime;
-            document.getElementById('timer').innerText = elapsed.toFixed(2);
+            document.getElementById('timer').innerText = elapsed.toFixed(1);
         }
 
         setInterval(updateTime, 100);  // 100ミリ秒ごとに更新

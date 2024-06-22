@@ -151,7 +151,9 @@ def signup():
         new_user = User(name=name, password=password)
         db.session.add(new_user)
         db.session.commit()
-        return redirect(url_for('login'))
+        login_user(new_user)
+
+        return redirect(url_for('index'))
     return render_template('signup.html')
 
 @app.route('/logout')
