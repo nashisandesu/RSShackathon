@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>My Page</title>
+</head>
+<body>
+    <h1>Welcome, {{ user.name }}</h1>
+    <h2>Asks</h2>
+    <ul>
+        {% for ask in asks %}
+            <li>{{ ask.real_answer }}</li>
+        {% endfor %}
+    </ul>
+    <h2>Scores</h2>
+    <ul>
+        {% for score in scores %}
+            <li>{{ score.difficulty_level }} - {{ score.time }}</li>
+        {% endfor %}
+    </ul>
+</body>
+</html>
