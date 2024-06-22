@@ -6,7 +6,16 @@
 </head>
 <body>
     <h1>結果</h1>
-    <p>あなたのキャラクターは {{ character }} です。</p>
-    <a href="{{ url_for('reset') }}">もう一度やる</a>
+    {% if character %}
+        <p>答えは{{ character }}です！</p>
+        {% if image_path %}
+            <img src="{{ image_path }}" alt="{{ character }}">
+        {% else %}
+            <p>対応する画像が見つかりませんでした。</p>
+        {% endif %}
+    {% else %}
+        <p>特定のキャラクターを見つけることができませんでした。</p>
+    {% endif %}
+    <a href="{{ url_for('reset') }}">リセット</a>
 </body>
 </html>

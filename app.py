@@ -66,18 +66,18 @@ features_map = {
 # 推論エンジンを実装
 def infer_character(answers):
     possible_characters = characters
-    
+
     for question, answer in zip(questions, answers):
         feature = features_map[question]
         if answer == 'はい':
             possible_characters = [char for char in possible_characters if char['features'][feature] is True]
         else:
             possible_characters = [char for char in possible_characters if char['features'][feature] is False]
-    
+
     if len(possible_characters) == 1:
-        return possible_characters[0]['name']
+        return possible_characters[0]
     else:
-        return "特定のキャラクターを見つけることができませんでした。"
+        return None
 
 answers = []
 
@@ -95,17 +95,32 @@ def index():
 def answer():
     answer = request.form['answer']
     answers.append(answer)
-    
+
     if len(answers) >= len(questions):
         return redirect(url_for('result'))
-    
+
     return redirect(url_for('index'))
 
 @app.route('/result')
 @login_required
 def result():
-    character = infer_character(answers)
-    return render_template('result.html', character=character)
+    character_data = infer_character(answers)
+    if character_data:
+        character = character_data['name']
+        png_path = os.path.join(app.static_folder, f'elements/{character}.png')
+        jpg_path = os.path.join(app.static_folder, f'elements/{character}.jpg')
+
+        if os.path.exists(png_path):
+            image_path = url_for('static', filename=f'elements/{character}.png')
+        elif os.path.exists(jpg_path):
+            image_path = url_for('static', filename=f'elements/{character}.jpg')
+        else:
+            image_path = None
+    else:
+        character = "特定のキャラクターを見つけることができませんでした。"
+        image_path = None
+
+    return render_template('result.html', character=character, image_path=image_path)
 
 @app.route('/reset')
 @login_required
