@@ -141,6 +141,7 @@ answers = []
 qa_history = []
 current_idx = 0
 answer = None
+elements_list = []
 @app.route('/')
 @login_required
 def index():
@@ -154,15 +155,11 @@ def index():
 
 @app.route('/select_mode', methods = ['POST'])
 def select_mode():
-    global answer
+    global answer, elements_list
     mode = request.form['mode']
-
-
-
-    if mode == 'アキネーター':
-        return redirect(url_for('mode_akinator'))
-    elif mode == 'ウミガメ':
-        answer = random.choice(other.simple)
+    elements_list = other.all_mode_elements[mode]
+    answer = answer = random.choice(elements_list)
+    if mode in {'初級', '中級', '上級', '超上級'}:
         return redirect(url_for('mode_umigame'))
     else:
         return redirect(url_for('index'))
@@ -201,8 +198,16 @@ def mode_umigame():
     
 @app.route('/mode_umigame_answer', methods=['POST', 'GET'])
 def mode_umigame_answer():
-    global answer
-    return render_template('mode_umigame_answer.html', elements = other.simple, qa_history = qa_history)
+    global answer, elements_list
+    return render_template('mode_umigame_answer.html', elements = elements_list, qa_history = qa_history)
+
+def get_image_path(symbol):
+    jpg_path = os.path.join(app.static_folder, f'elementsJPG/{symbol}.jpg')
+    if os.path.exists(jpg_path):
+        image_path = url_for('static', filename=f'elementsJPG/{symbol}.jpg')
+    else:
+        image_path = None
+    return image_path
 
 def get_image_path(symbol):
     png_path = os.path.join(app.static_folder, f'elements/{symbol}.png')

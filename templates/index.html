@@ -2,15 +2,39 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>アキネーターウミガメ</title>
+    <title>ウミガメ</title>
+    <style>
+        .mode-container {
+            display: flex;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .description {
+            margin-left: 10px;
+        }
+    </style>
 </head>
 <body>
-    <h1>アキネーターウミガメ</h1>
+    <h1>ウミガメ</h1>
     <p>モードを選んでね</p>
 
-    <form action="{{url_for('select_mode')}}" method="post">
-        <button type="submit" name="mode" value="アキネーター">アキネーター</button>
-        <button type="submit" name="mode" value="ウミガメ">ウミガメ</button>
+    <form action="{{ url_for('select_mode') }}" method="post">
+        <div class="mode-container">
+            <button type="submit" name="mode" value="初級">初級</button>
+            <span class="description">原子番号1~20までが出題されるよ!</span>
+        </div>
+        <div class="mode-container">
+            <button type="submit" name="mode" value="中級">中級</button>
+            <span class="description">原子番号1~36までが出題されるよ!</span>
+        </div>
+        <div class="mode-container">
+            <button type="submit" name="mode" value="上級">上級</button>
+            <span class="description">大学受験で頻出の元素が出題されるよ!</span>
+        </div>
+        <div class="mode-container">
+            <button type="submit" name="mode" value="超上級">超上級</button>
+            <span class="description">全ての元素が出題されるよ!めざせ元素マスター！</span>
+        </div>
     </form>
 </body>
 </html>
