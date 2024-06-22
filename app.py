@@ -7,6 +7,7 @@ from dotenv import load_dotenv
 import random
 import os
 import time
+import threading
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -28,6 +29,15 @@ class User(UserMixin, db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), unique=True, nullable=False)
     password = db.Column(db.String(100), nullable=False)
+
+class Data(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, nullable=False)
+    question = db.Column(db.Text, nullable=False)
+    answer = db.Column(db.Boolean, nullable=False)
+
+with app.app_context():
+    db.create_all()
 
 @login_manager.user_loader
 def load_user(user_id):
@@ -83,6 +93,17 @@ def infer_character(answers):
     else:
         return "特定のキャラクターを見つけることができませんでした。"
 
+def save_data(user_id, question, answer):
+    boolean_answer = True if answer.lower() == 'yes' else False
+    try:
+        with app.app_context():
+            db.session.add(Data(user_id=user_id, question=question, answer=boolean_answer))
+            db.session.commit()
+            print("Data saved successfully")
+    except Exception as e:
+        db.session.rollback()
+        print(f"Error saving data: {e}")
+
 answers = []
 qa_history = []
 current_idx = 0
@@ -96,13 +117,11 @@ def index():
         session['start_time'] = time.time()
     
     elapsed_time = time.time() - session['start_time'] if 'start_time' in session else 0
-
     return render_template('index.html')
 
 @app.route('/select_mode', methods = ['POST'])
 def select_mode():
     global answer
-    print('select_mode')
     mode = request.form['mode']
 
 
@@ -136,6 +155,10 @@ def mode_umigame():
         else:
             exit()
 
+        user_id = session.get('user_id')
+        if user_id and yn_answer:
+            threading.Thread(target=save_data, args=(user_id, question, yn_answer)).start()
+
         answers.append(yn_answer)
         qa_history.append((question, yn_answer))
         current_idx += 1
@@ -148,17 +171,30 @@ def mode_umigame_answer():
     global answer
     return render_template('mode_umigame_answer.html', elements = other.simple, qa_history = qa_history)
 
+def get_image_path(symbol):
+    png_path = os.path.join(app.static_folder, f'elements/{symbol}.png')
+    jpg_path = os.path.join(app.static_folder, f'elements/{symbol}.jpg')
+
+    if os.path.exists(png_path):
+        image_path = url_for('static', filename=f'elements/{symbol}.png')
+    elif os.path.exists(jpg_path):
+        image_path = url_for('static', filename=f'elements/{symbol}.jpg')
+    else:
+        image_path = None
+    return image_path
+
 @app.route('/result', methods=['POST', 'GET'])
 def result():
     global answer
     user_answer_name = request.form['user_answer_name']
+    image_path = get_image_path(answer[1])
     elapsed_time = time.time() - session['start_time']
     session.pop('start_time', None)
     if answer[0] == user_answer_name:
         print('Yes')
-        return render_template('result.html', comment="正解！おめでとう！", user_answer = user_answer_name, true_answer = answer[0], qa_history = qa_history, elapsed_time=elapsed_time)
+        return render_template('result.html', judge=True, user_answer = user_answer_name, true_answer = answer[0], qa_history = qa_history, image_path = image_path, elapsed_time=elapsed_time)
     else:
-        return render_template('result.html', comment="残念！答えと違うよ！", user_answer = user_answer_name, true_answer = answer[0], qa_history = qa_history, elapsed_time=elapsed_time)
+        return render_template('result.html', judge=False, user_answer = user_answer_name, true_answer = answer[0], qa_history = qa_history, image_path = image_path, elapsed_time=elapsed_time)
 
 @app.route('/reset')
 @login_required
@@ -179,6 +215,7 @@ def login():
         user = User.query.filter_by(name=name).first()
         if user and user.password == password:
             login_user(user)
+            session['user_id'] = user.id
             return redirect(url_for('index'))
         else:
             return "Invalid credentials"
@@ -200,6 +237,7 @@ def signup():
         db.session.add(new_user)
         db.session.commit()
         login_user(new_user)
+        session['user_id'] = user.id
 
         return redirect(url_for('index'))
     return render_template('signup.html')
@@ -208,6 +246,7 @@ def signup():
 @login_required
 def logout():
     logout_user()
+    session.pop('user_id', None)
     return redirect(url_for('login'))
 
 if __name__ == '__main__':
