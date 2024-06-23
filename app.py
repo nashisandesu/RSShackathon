@@ -184,18 +184,6 @@ def get_image_path(symbol):
         image_path = None
     return image_path
 
-def get_image_path(symbol):
-    png_path = os.path.join(app.static_folder, f'elements/{symbol}.png')
-    jpg_path = os.path.join(app.static_folder, f'elements/{symbol}.jpg')
-
-    if os.path.exists(png_path):
-        image_path = url_for('static', filename=f'elements/{symbol}.png')
-    elif os.path.exists(jpg_path):
-        image_path = url_for('static', filename=f'elements/{symbol}.jpg')
-    else:
-        image_path = None
-    return image_path
-
 @app.route('/result', methods=['POST', 'GET'])
 @login_required
 def result():
