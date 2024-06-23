@@ -60,22 +60,6 @@ with app.app_context():
 def load_user(user_id):
     return db.session.get(User, user_id)
 
-# 推論エンジンを実装
-def infer_character(answers):
-    possible_characters = characters
-    
-    for question, answer in zip(questions, answers):
-        feature = features_map[question]
-        if answer == 'はい':
-            possible_characters = [char for char in possible_characters if char['features'][feature] is True]
-        else:
-            possible_characters = [char for char in possible_characters if char['features'][feature] is False]
-    
-    if len(possible_characters) == 1:
-        return possible_characters[0]['name']
-    else:
-        return "特定のキャラクターを見つけることができませんでした。"
-
 def save_ask(user_id, real_answer):
     try:
         with app.app_context():
