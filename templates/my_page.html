@@ -5,12 +5,14 @@ Home - ウミガメ
 {% endblock %}
 {% block content %}
 <link rel="stylesheet" href="./static/graph.css">
+<script type="text/javascript" src="{{ url_for('static', filename='redirect.js') }}"></script>
 <h1>Welcome, {{ username }}</h1>
 
 <h2>History</h2>
 <div class="overflow-auto" style="max-height: 50vh;">
 
     <ul class="list-group mt-4 my-5">
+
         {% for item in history %}
 
         <li class="list-group-item">
