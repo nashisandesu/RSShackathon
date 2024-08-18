@@ -1,5 +1,8 @@
 ## 概要  
-海亀のスープを利用した、学習アプリ  
+ウミガメのスープを利用した、学習アプリ  
+
+https://github.com/user-attachments/assets/b6d4d620-0d2e-48c5-93b2-ff2b49f6d430
+
 LLM:出題側 (はい/いいえ)  
 USR:質問を投げる
 
